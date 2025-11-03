@@ -38,6 +38,8 @@ int main(int argc, char *argv[]) {
         if (*(*(argv + 1)) == '-' && *(*(argv + 1) + 1) != '\0' && *(*(argv + 1) + 1) == 'r') {
             // Check that source and destination are both valid directories 
             if (!is_valid_dir(*(argv + 2)) || !is_valid_dir(*(argv + argc - 1))) return 1;
+            // Find the path of the source directory, so that we can find hte name of teh folder that we want to recursivley copy
+            char *destination_dir = *(argv + argc - 1); 
             dir_walk(*(argv + 2), *(argv + argc - 1));
             return 0;
         }
@@ -67,10 +69,23 @@ int dir_walk(char *source,  char *destination) {
             fprintf(stderr, "dirwalk: name %s %s too long\n", source, dp->d_name);
         else {
             sprintf(name, "%s%s", source, dp->d_name);
-            cp(name, destination); 
+            printf("source: %s\n", source);
+            printf("dp->dname: %s\n", dp->d_name);
+            if (is_valid_dir(name)) {
+                sprintf(name, "%s/%s/", source, dp->d_name);
+                char new_dir[MAX_PATH];
+                sprintf(new_dir, "%s/%s/", destination, dp->d_name);
+                if (mkdir(new_dir, 0755) != 0) {
+                    fprintf(stderr, "Error: Could not create the directory %s\n", name);
+                }
+                dir_walk(name, new_dir);    
+            } else {
+                cp(name, destination); 
+            }
         }
     }
     closedir(dfd);
+    return 0;
 }
 
 
@@ -202,12 +217,10 @@ void *safe_malloc(size_t size) {
 int is_valid_dir(char *dir_name) {
     struct stat destbuf;
     if (stat(dir_name, &destbuf) == -1) {
-        fprintf(stderr, "Error: Directory does not exist %s\n", dir_name);
         return 0;
     }
     
     if ((destbuf.st_mode & S_IFMT) != S_IFDIR) {
-        fprintf(stderr, "Error: Not a directory %s\n", dir_name); 
         return 0;
     } 
     return 1;
