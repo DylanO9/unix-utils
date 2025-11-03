@@ -29,10 +29,12 @@ int main(int argc, char *argv[]) {
     struct stat destbuf;
     if (stat(*(argv + argc - 1), &destbuf) == -1) {
         fprintf(stderr, "Error: Destination directory does not exist %s\n", *(argv + 2));
+        return 1;
     }
     
     if ((destbuf.st_mode & S_IFMT) != S_IFDIR) {
         fprintf(stderr, "Error: Destination is not a directory %s\n", *(argv + 2));
+        return 1;
     } 
 
     for (int i = 1; i < argc - 1; i++) {
@@ -88,7 +90,7 @@ int cp(char *source, char *destination) {
     int source_fd;
     if ((source_fd = open(source, O_RDONLY, 0)) < 0) {
         fprintf(stderr, "Error: Can not read the file %s\n", source);
-        return 1;
+        return 0;
     }
     
     struct File_Info *source_file = deconstruct_file_path(source);
@@ -121,43 +123,43 @@ int cp(char *source, char *destination) {
         if (stat(destination_file->full_path, &destination_buf) != -1) {
             if (source_buf.st_dev == destination_buf.st_dev && source_buf.st_ino == destination_buf.st_ino) {
                 fprintf(stderr, "Error: Attempted to copy a file to the same location\n");
-                return 1;
+                return 0;
             }
         }
 
         if ((target_fd = creat(destination_file->full_path, 0666)) < 0) {
             fprintf(stderr, "Error: Could not create the new file %s\n", destination_file->full_path);
-            return 1;
+            return 0;
         } 
     } else if ((destination_buf.st_mode & S_IFMT) == S_IFREG) {
         if (source_buf.st_dev == destination_buf.st_dev && source_buf.st_ino == destination_buf.st_ino) {
             fprintf(stderr, "Error: Attempted to copy a file to the same location\n");
-            return 1;
+            return 0;
         }
         
         if (truncate(destination, 0) == -1) {
             fprintf(stderr, "Error: Could not clear the file to override: %s\n", destination_file->full_path);    
-            return 1;
+            return 0;
         }  
         
         if ((target_fd = open(destination, O_WRONLY, 0)) < 0) {
             fprintf(stderr, "Error: Could not open the file %s\n", destination_file->full_path);
-            return 1;
+            return 0;
         }
     } else {
         struct stat dirbuf; 
         if (stat(destination_file->directory, &dirbuf) == -1) {
             fprintf(stderr, "Error: Can not access the directory: %s\n", destination_file->directory);
-            return 1;
+            return 0;
         }
         if ((dirbuf.st_mode & S_IFMT) != S_IFDIR) {
             fprintf(stderr, "Error: There is no directory that matches %s\n", destination_file->directory);
-            return 1;
+            return 0;
         }
     
         if ((target_fd = creat(destination_file->full_path, 0666)) < 0) {
             fprintf(stderr, "Error: Could not create the new file %s\n", destination_file->full_path);
-            return 1;
+            return 0;
         } 
     }
     copy_file(target_fd, source_fd);
@@ -165,5 +167,5 @@ int cp(char *source, char *destination) {
     free_file(destination_file);
     close(target_fd);
     close(source_fd);
-    return 0;
+    return 1;
 }
