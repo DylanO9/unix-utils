@@ -5,6 +5,7 @@
 #include <sys/stat.h> /* structure returned by stat */
 #include <stdlib.h>
 
+void *safe_malloc(size_t);
 int copy_file(int, int);
 struct File_Info *deconstruct_file_path(char *);
 void free_file(struct File_Info *file); 
@@ -58,19 +59,19 @@ int copy_file(int target_fd, int source_fd) {
 }
 
 struct File_Info *deconstruct_file_path(char *path) {
-    struct File_Info *file = (struct File_Info *)malloc(sizeof(struct File_Info)); 
+    struct File_Info *file = (struct File_Info *)safe_malloc(sizeof(struct File_Info)); 
     int len = strlen(path);
 
-    char *converted = malloc(len + 3);
+    char *converted = safe_malloc(len + 3);
     converted[0] = '\0';
     strcat(converted, "./");
     strcat(converted, path);
     char *file_name = strrchr(converted, '/') + 1; 
-    char *new_file = malloc(len + 3); 
+    char *new_file = safe_malloc(len + 3); 
     strcpy(new_file, file_name);
 
     int dir_len = file_name - converted;
-    char *dir = malloc(dir_len+1);  
+    char *dir = safe_malloc(dir_len+1);  
     strncpy(dir, converted, dir_len);
     
     file->directory = dir;
@@ -106,7 +107,7 @@ int cp(char *source, char *destination) {
     int target_fd;
     if ((destination_buf.st_mode & S_IFMT) == S_IFDIR) {
         if (destination_file->full_path[strlen(destination_file->full_path) - 1] != '/') {
-            char *full_path_extended = malloc(strlen(destination_file->full_path) + strlen(source_file->file) + 2);
+            char *full_path_extended = safe_malloc(strlen(destination_file->full_path) + strlen(source_file->file) + 2);
             strcpy(full_path_extended, destination_file->full_path);
             strcat(full_path_extended, "/");
             free(destination_file->full_path);
@@ -116,7 +117,7 @@ int cp(char *source, char *destination) {
         }
         
         // Append the source file name to the directory given in the second argument
-        destination_file->file = malloc(strlen(source_file->file)+1);
+        destination_file->file = safe_malloc(strlen(source_file->file)+1);
         strcpy(destination_file->file, source_file->file);
         strcat(destination_file->full_path, destination_file->file);
 
@@ -168,4 +169,13 @@ int cp(char *source, char *destination) {
     close(target_fd);
     close(source_fd);
     return 1;
+}
+
+void *safe_malloc(size_t size) {
+    void *ptr = malloc(size);
+    if (!ptr) {
+        fprintf(stderr, "Error: Memory allocation failed\n");
+        exit(EXIT_FAILURE);
+    }
+    return ptr;
 }
