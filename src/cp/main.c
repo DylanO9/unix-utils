@@ -32,13 +32,11 @@ int main(int argc, char *argv[]) {
 
     int recursive_copy = 0;
     if (argc == 4) {
-        if (*(*(argv + 1)) == '-') {
+        if (*(*(argv + 1)) == '-' && *(*(argv + 2)) != '\0' && *(*(argv + 2)) == 'r') {
             // Check that source and destination are both valid directories 
-             
-            return 1;
+            if (!is_valid_dir(*(argv + 2)) || !is_valid_dir(*(argv + argc - 1))) return 1;
         }
     }
-    
     
     if (!is_valid_dir(*(argv + argc - 1))) return 1; 
     for (int i = 1; i < argc - 1; i++) {
