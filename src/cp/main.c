@@ -4,8 +4,10 @@
 #include <string.h>
 #include <sys/stat.h> /* structure returned by stat */
 #include <stdlib.h>
+#include <dirent.h>
 
 #define BUFFER_SIZE 8192
+#define MAX_PATH    1024
 
 int is_valid_dir(char *dir_name);
 void *safe_malloc(size_t);
@@ -13,6 +15,7 @@ int copy_file(int, int);
 struct File_Info *deconstruct_file_path(char *);
 void free_file(struct File_Info *file); 
 int cp(char *, char *);
+int dir_walk(char *, char *);
 
 struct File_Info {
     char *directory;
@@ -32,9 +35,11 @@ int main(int argc, char *argv[]) {
 
     int recursive_copy = 0;
     if (argc == 4) {
-        if (*(*(argv + 1)) == '-' && *(*(argv + 2)) != '\0' && *(*(argv + 2)) == 'r') {
+        if (*(*(argv + 1)) == '-' && *(*(argv + 1) + 1) != '\0' && *(*(argv + 1) + 1) == 'r') {
             // Check that source and destination are both valid directories 
             if (!is_valid_dir(*(argv + 2)) || !is_valid_dir(*(argv + argc - 1))) return 1;
+            dir_walk(*(argv + 2), *(argv + argc - 1));
+            return 0;
         }
     }
     
@@ -44,6 +49,28 @@ int main(int argc, char *argv[]) {
     }
     
     return 0;
+}
+
+int dir_walk(char *source,  char *destination) {
+    struct dirent *dp;
+    DIR *dfd;   
+    char name[MAX_PATH];
+    
+    if ((dfd = opendir(source)) == NULL) {
+        fprintf(stderr, "dirwalk: can't open %s\n", source);
+        return 1;
+    }
+    while ((dp = readdir(dfd)) != NULL) {
+        if (strcmp(dp->d_name, ".") == 0 || strcmp(dp->d_name, "..") == 0)
+            continue;
+        if (strlen(source)+strlen(dp->d_name)+2 > sizeof(name))
+            fprintf(stderr, "dirwalk: name %s %s too long\n", source, dp->d_name);
+        else {
+            sprintf(name, "%s%s", source, dp->d_name);
+            cp(name, destination); 
+        }
+    }
+    closedir(dfd);
 }
 
 
