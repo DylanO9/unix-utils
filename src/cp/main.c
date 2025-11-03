@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
     int target_fd;
     if ((destination_buf.st_mode & S_IFMT) == S_IFDIR) {
         if (destination_file->full_path[strlen(destination_file->full_path) - 1] != '/') {
-            char *full_path_extended = malloc(strlen(destination_file->full_path) + 2);
+            char *full_path_extended = malloc(strlen(destination_file->full_path) + strlen(source_file->file) + 2);
             strcpy(full_path_extended, destination_file->full_path);
             strcat(full_path_extended, "/");
             free(destination_file->full_path);
@@ -78,6 +78,7 @@ int main(int argc, char *argv[]) {
         
         if ((target_fd = open(*(argv + 2), O_WRONLY, 0)) < 0) {
             fprintf(stderr, "Error: Could not open the file %s\n", destination_file->full_path);
+            return 1;
         }
     } else {
         struct stat dirbuf; 
@@ -92,6 +93,7 @@ int main(int argc, char *argv[]) {
     
         if ((target_fd = creat(destination_file->full_path, 0666)) < 0) {
             fprintf(stderr, "Error: Could not create the new file %s\n", destination_file->full_path);
+            return 1;
         } 
     }
     copy_file(target_fd, source_fd);
