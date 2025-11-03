@@ -21,7 +21,20 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Error: Not enough files\n");
         return 1;
     }
+    if (argc == 3) {
+        cp(*(argv + 1), *(argv + 2));    
+        return 0;
+    } 
     
+    struct stat destbuf;
+    if (stat(*(argv + argc - 1), &destbuf) == -1) {
+        fprintf(stderr, "Error: Destination directory does not exist %s\n", *(argv + 2));
+    }
+    
+    if ((destbuf.st_mode & S_IFMT) != S_IFDIR) {
+        fprintf(stderr, "Error: Destination is not a directory %s\n", *(argv + 2));
+    } 
+
     for (int i = 1; i < argc - 1; i++) {
         cp(*(argv + i), *(argv + argc - 1));
     }
