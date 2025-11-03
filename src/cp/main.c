@@ -149,16 +149,7 @@ int cp(char *source, char *destination) {
             return 0;
         }
     } else {
-        struct stat dirbuf; 
-        if (stat(destination_file->directory, &dirbuf) == -1) {
-            fprintf(stderr, "Error: Can not access the directory: %s\n", destination_file->directory);
-            return 0;
-        }
-        if ((dirbuf.st_mode & S_IFMT) != S_IFDIR) {
-            fprintf(stderr, "Error: There is no directory that matches %s\n", destination_file->directory);
-            return 0;
-        }
-    
+        if (!is_valid_dir(destination_file->directory)) return 0;
         if ((target_fd = creat(destination_file->full_path, 0666)) < 0) {
             fprintf(stderr, "Error: Could not create the new file %s\n", destination_file->full_path);
             return 0;
