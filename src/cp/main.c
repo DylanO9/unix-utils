@@ -5,6 +5,8 @@
 #include <sys/stat.h> /* structure returned by stat */
 #include <stdlib.h>
 
+#define BUFFER_SIZE 8192
+
 void *safe_malloc(size_t);
 int copy_file(int, int);
 struct File_Info *deconstruct_file_path(char *);
@@ -48,9 +50,9 @@ int main(int argc, char *argv[]) {
 
 int copy_file(int target_fd, int source_fd) {
     int n;
-    char c;
-    while((n = read(source_fd, &c, 1)) > 0) {
-        if (write(target_fd, &c, n) <= 0) {
+    char c[BUFFER_SIZE];
+    while((n = read(source_fd, &c, BUFFER_SIZE)) > 0) {
+        if (write(target_fd, &c, n) != n) {
             fprintf(stderr, "Error writing to the file\n");
             return 0;
         }
