@@ -17,13 +17,13 @@ struct File_Info {
 
 int main(int argc, char *argv[]) {
     if (argc < 3) {
-        fprintf(stderr, "Not enough files\n");
+        fprintf(stderr, "Error: Not enough files\n");
         return 1;
     }
     
     int source_fd;
     if ((source_fd = open(*(argv + 1), O_RDONLY, 0)) < 0) {
-        fprintf(stderr, "Open: No such file\n");
+        fprintf(stderr, "Error: Can not read the file %s\n", *(argv + 1));
         return 1;
     }
     
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
         }
 
         if ((target_fd = creat(destination_file->full_path, 0666)) < 0) {
-            fprintf(stderr, "Error creating new file\n");
+            fprintf(stderr, "Error: Could not create the new file %s\n", destination_file->full_path);
             return 1;
         } 
     } else if ((destination_buf.st_mode & S_IFMT) == S_IFREG) {
@@ -72,26 +72,26 @@ int main(int argc, char *argv[]) {
         }
         
         if (truncate(*(argv + 2), 0) == -1) {
-            fprintf(stderr, "There was an error clearing the file\n");    
+            fprintf(stderr, "Error: Could not clear the file to override: %s\n", destination_file->full_path);    
             return 1;
         }  
         
         if ((target_fd = open(*(argv + 2), O_WRONLY, 0)) < 0) {
-            fprintf(stderr, "There was an error opening the file\n");
+            fprintf(stderr, "Error: Could not open the file %s\n", destination_file->full_path);
         }
     } else {
         struct stat dirbuf; 
         if (stat(destination_file->directory, &dirbuf) == -1) {
-            fprintf(stderr, "Can not access this directory: %s\n", destination_file->directory);
+            fprintf(stderr, "Error: Can not access the directory: %s\n", destination_file->directory);
             return 1;
         }
         if ((dirbuf.st_mode & S_IFMT) != S_IFDIR) {
-            fprintf(stderr, "There is no directory that matches: %s\n", destination_file->directory);
+            fprintf(stderr, "Error: There is no directory that matches %s\n", destination_file->directory);
             return 1;
         }
     
         if ((target_fd = creat(destination_file->full_path, 0666)) < 0) {
-            fprintf(stderr, "There was an error creating the new file: %s\n", destination_file->file);
+            fprintf(stderr, "Error: Could not create the new file %s\n", destination_file->full_path);
         } 
     }
     copy_file(target_fd, source_fd);
