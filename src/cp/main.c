@@ -64,12 +64,8 @@ int main(int argc, char *argv[]) {
         if ((target_fd = creat(destination_file->full_path, 0666)) < 0) {
             fprintf(stderr, "Error creating new file\n");
             return 1;
-        } else {
-            fprintf(stderr, "Success! Created new file %s\n", *(argv + 1));
-        }
+        } 
     } else if ((destination_buf.st_mode & S_IFMT) == S_IFREG) {
-        fprintf(stderr, "This is a file that is already created, so we will have to override\n");
-        
         if (source_buf.st_dev == destination_buf.st_dev && source_buf.st_ino == destination_buf.st_ino) {
             fprintf(stderr, "Error: Attempted to copy a file to the same location\n");
             return 1;
@@ -124,6 +120,7 @@ struct File_Info *deconstruct_file_path(char *path) {
     int len = strlen(path);
 
     char *converted = malloc(len + 3);
+    converted[0] = '\0';
     strcat(converted, "./");
     strcat(converted, path);
     char *file_name = strrchr(converted, '/') + 1; 
