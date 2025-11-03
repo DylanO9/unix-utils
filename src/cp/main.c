@@ -32,10 +32,10 @@ int main(int argc, char *argv[]) {
 
     struct stat source_buf;
     struct stat destination_buf;    
-    if (stat(source_file->full_path, &destination_buf) == -1) {
+    if (stat(source_file->full_path, &source_buf) == -1) {
 
     }
-    if (stat(destination_file->full_path, &source_buf) == -1) {
+    if (stat(destination_file->full_path, &destination_buf) == -1) {
     }
 
     
@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
         strcpy(destination_file->file, source_file->file);
         strcat(destination_file->full_path, destination_file->file);
 
-        if (stat(destination_file->full_path, &source_buf) != -1) {
+        if (stat(destination_file->full_path, &destination_buf) != -1) {
             if (source_buf.st_dev == destination_buf.st_dev && source_buf.st_ino == destination_buf.st_ino) {
                 fprintf(stderr, "Error: Attempted to copy a file to the same location\n");
                 return 1;
