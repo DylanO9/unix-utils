@@ -6,6 +6,14 @@
 #include <stdlib.h>
 
 int copy_file(int, int);
+int are_same_directory(char *, char *);
+struct File_Info *deconstruct_file_path(char *);
+
+struct File_Info {
+    char *directory;
+    char *file;
+    char *full_path;
+};
 
 int main(int argc, char *argv[]) {
     if (argc < 3) {
@@ -19,30 +27,52 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     
-    struct stat stbuf;
-    if (stat(*(argv + 2), &stbuf) == -1) {
-        fprintf(stderr, "Can not access this directory/file\n");
+    struct File_Info *source_file = deconstruct_file_path(*(argv + 1));
+    struct File_Info *destination_file = deconstruct_file_path(*(argv + 2));
+
+    struct stat source_buf;
+    struct stat destination_buf;    
+    if (stat(source_file->full_path, &destination_buf) == -1) {
+
+    }
+    if (stat(destination_file->full_path, &source_buf) == -1) {
     }
 
+    
     int len = strlen(*(argv + 2));
     int target_fd;
-    if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
-        char *converted = malloc(len + 2);
-        strcpy(converted, *(argv + 2));
-        if (*(*(argv + 2) + len - 1) != '/') strcat(converted, "/");
+    if ((source_buf.st_mode & S_IFMT) == S_IFDIR) {
+        if (destination_file->full_path[strlen(destination_file->full_path) - 1] != '/') {
+            strcat(destination_file->full_path, "/");
+            free(destination_file->file);
+        }
+        
+        // Append the source file name to the directory given in the second argument
+        destination_file->file = malloc(strlen(source_file->file)+1);
+        strcpy(destination_file->file, source_file->file);
+        strcat(destination_file->full_path, destination_file->file);
 
-        char *dir = malloc(len + strlen(*(argv + 1)) + 1);
-        strcat(dir, converted);
-        strcat(dir, *(argv + 1));
-        if ((target_fd = creat(dir, 0666)) < 0) {
+        if (stat(destination_file->full_path, &source_buf) != -1) {
+            if (source_buf.st_dev == destination_buf.st_dev && source_buf.st_ino == destination_buf.st_ino) {
+                fprintf(stderr, "Error: Attempted to copy a file to the same location\n");
+                return 1;
+            }
+        }
+
+        if ((target_fd = creat(destination_file->full_path, 0666)) < 0) {
             fprintf(stderr, "Error creating new file\n");
             return 1;
         } else {
             fprintf(stderr, "Success! Created new file %s\n", *(argv + 1));
         }
-    } else if ((stbuf.st_mode & S_IFMT) == S_IFREG) {
+    } else if ((source_buf.st_mode & S_IFMT) == S_IFREG) {
         fprintf(stderr, "This is a file that is already created, so we will have to override\n");
-
+        
+        if (source_buf.st_dev == destination_buf.st_dev && source_buf.st_ino == destination_buf.st_ino) {
+            fprintf(stderr, "Error: Attempted to copy a file to the same location\n");
+            return 1;
+        }
+        
         if (truncate(*(argv + 2), 0) == -1) {
             fprintf(stderr, "There was an error clearing the file\n");    
             return 1;
@@ -52,31 +82,18 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "There was an error opening the file\n");
         }
     } else {
-        fprintf(stderr, "We have a new file name\n"); 
-
-        char *converted = malloc(len + 3);
-        strcat(converted, "./");
-        strcat(converted, *(argv + 2));
-        char *file_name = strrchr(converted, '/');
-        fprintf(stderr, "New File that has not been created yet: %s\n", ++file_name);
-
-        int dir_len = file_name - converted;
-        char *dir = malloc(dir_len+1);  
-        strncpy(dir, converted, dir_len);
-        fprintf(stderr, "Directory %s\n", dir);
-        
         struct stat dirbuf; 
-        if (stat(dir, &dirbuf) == -1) {
-            fprintf(stderr, "Can not access this directory: %s\n", dir);
+        if (stat(destination_file->directory, &dirbuf) == -1) {
+            fprintf(stderr, "Can not access this directory: %s\n", destination_file->directory);
             return 1;
         }
         if ((dirbuf.st_mode & S_IFMT) != S_IFDIR) {
-            fprintf(stderr, "There is no directory that matches: %s\n", dir);
+            fprintf(stderr, "There is no directory that matches: %s\n", destination_file->directory);
             return 1;
         }
     
-        if ((target_fd = creat(*(argv + 2), 0666)) < 0) {
-            fprintf(stderr, "There was an error creating the new file: %s\n", file_name);
+        if ((target_fd = creat(destination_file->full_path, 0666)) < 0) {
+            fprintf(stderr, "There was an error creating the new file: %s\n", destination_file->file);
         } 
     }
     copy_file(target_fd, source_fd);
@@ -96,4 +113,28 @@ int copy_file(int target_fd, int source_fd) {
         }
     } 
     return 1;
+}
+
+int are_same_directory(char *path1, char *path2) {
+}
+
+struct File_Info *deconstruct_file_path(char *path) {
+    struct File_Info *file = (struct File_Info *)malloc(sizeof(struct File_Info)); 
+    int len = strlen(path);
+
+    char *converted = malloc(len + 3);
+    strcat(converted, "./");
+    strcat(converted, path);
+    char *file_name = strrchr(converted, '/') + 1; 
+    char *new_file = malloc(len + 3); 
+    strcpy(new_file, file_name);
+
+    int dir_len = file_name - converted;
+    char *dir = malloc(dir_len+1);  
+    strncpy(dir, converted, dir_len);
+    
+    file->directory = dir;
+    file->file = new_file;
+    file->full_path = converted;
+    return file;
 }
