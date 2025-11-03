@@ -8,6 +8,7 @@
 int copy_file(int, int);
 int are_same_directory(char *, char *);
 struct File_Info *deconstruct_file_path(char *);
+void free_file(struct File_Info *file); 
 
 struct File_Info {
     char *directory;
@@ -41,7 +42,7 @@ int main(int argc, char *argv[]) {
     
     int len = strlen(*(argv + 2));
     int target_fd;
-    if ((source_buf.st_mode & S_IFMT) == S_IFDIR) {
+    if ((destination_buf.st_mode & S_IFMT) == S_IFDIR) {
         if (destination_file->full_path[strlen(destination_file->full_path) - 1] != '/') {
             strcat(destination_file->full_path, "/");
             free(destination_file->file);
@@ -65,7 +66,7 @@ int main(int argc, char *argv[]) {
         } else {
             fprintf(stderr, "Success! Created new file %s\n", *(argv + 1));
         }
-    } else if ((source_buf.st_mode & S_IFMT) == S_IFREG) {
+    } else if ((destination_buf.st_mode & S_IFMT) == S_IFREG) {
         fprintf(stderr, "This is a file that is already created, so we will have to override\n");
         
         if (source_buf.st_dev == destination_buf.st_dev && source_buf.st_ino == destination_buf.st_ino) {
@@ -97,6 +98,8 @@ int main(int argc, char *argv[]) {
         } 
     }
     copy_file(target_fd, source_fd);
+    free_file(source_file);
+    free_file(destination_file);
     close(target_fd);
     close(source_fd);
     return 0;
@@ -137,4 +140,11 @@ struct File_Info *deconstruct_file_path(char *path) {
     file->file = new_file;
     file->full_path = converted;
     return file;
+}
+
+void free_file(struct File_Info *file) {
+    free(file->directory);
+    free(file->file);
+    free(file->full_path);
+    free(file);    
 }
