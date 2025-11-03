@@ -6,7 +6,6 @@
 #include <stdlib.h>
 
 int copy_file(int, int);
-int are_same_directory(char *, char *);
 struct File_Info *deconstruct_file_path(char *);
 void free_file(struct File_Info *file); 
 
@@ -33,11 +32,8 @@ int main(int argc, char *argv[]) {
 
     struct stat source_buf;
     struct stat destination_buf;    
-    if (stat(source_file->full_path, &source_buf) == -1) {
-
-    }
-    if (stat(destination_file->full_path, &destination_buf) == -1) {
-    }
+    if (stat(source_file->full_path, &source_buf) == -1) {}
+    if (stat(destination_file->full_path, &destination_buf) == -1) {}
 
     
     int len = strlen(*(argv + 2));
@@ -121,9 +117,6 @@ int copy_file(int target_fd, int source_fd) {
         }
     } 
     return 1;
-}
-
-int are_same_directory(char *path1, char *path2) {
 }
 
 struct File_Info *deconstruct_file_path(char *path) {
