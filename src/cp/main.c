@@ -44,8 +44,13 @@ int main(int argc, char *argv[]) {
     int target_fd;
     if ((destination_buf.st_mode & S_IFMT) == S_IFDIR) {
         if (destination_file->full_path[strlen(destination_file->full_path) - 1] != '/') {
-            strcat(destination_file->full_path, "/");
+            char *full_path_extended = malloc(strlen(destination_file->full_path) + 2);
+            strcpy(full_path_extended, destination_file->full_path);
+            strcat(full_path_extended, "/");
+            free(destination_file->full_path);
             free(destination_file->file);
+            destination_file->full_path = full_path_extended;
+            destination_file->file = NULL;
         }
         
         // Append the source file name to the directory given in the second argument
