@@ -7,6 +7,7 @@
 
 #define BUFFER_SIZE 8192
 
+int is_valid_dir(char *dir_name);
 void *safe_malloc(size_t);
 int copy_file(int, int);
 struct File_Info *deconstruct_file_path(char *);
@@ -28,18 +29,18 @@ int main(int argc, char *argv[]) {
         cp(*(argv + 1), *(argv + 2));    
         return 0;
     } 
-    
-    struct stat destbuf;
-    if (stat(*(argv + argc - 1), &destbuf) == -1) {
-        fprintf(stderr, "Error: Destination directory does not exist %s\n", *(argv + 2));
-        return 1;
+
+    int recursive_copy = 0;
+    if (argc == 4) {
+        if (*(*(argv + 1)) == '-') {
+            // Check that source and destination are both valid directories 
+             
+            return 1;
+        }
     }
     
-    if ((destbuf.st_mode & S_IFMT) != S_IFDIR) {
-        fprintf(stderr, "Error: Destination is not a directory %s\n", *(argv + 2));
-        return 1;
-    } 
-
+    
+    if (!is_valid_dir(*(argv + argc - 1))) return 1; 
     for (int i = 1; i < argc - 1; i++) {
         cp(*(argv + i), *(argv + argc - 1));
     }
@@ -180,4 +181,18 @@ void *safe_malloc(size_t size) {
         exit(EXIT_FAILURE);
     }
     return ptr;
+}
+
+int is_valid_dir(char *dir_name) {
+    struct stat destbuf;
+    if (stat(dir_name, &destbuf) == -1) {
+        fprintf(stderr, "Error: Directory does not exist %s\n", dir_name);
+        return 0;
+    }
+    
+    if ((destbuf.st_mode & S_IFMT) != S_IFDIR) {
+        fprintf(stderr, "Error: Not a directory %s\n", dir_name); 
+        return 0;
+    } 
+    return 1;
 }
