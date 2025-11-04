@@ -49,7 +49,13 @@ Counts *my_wc(char *file) {
     file_counts->byte_count = 0;
     while ((n = read(fd, &buf, MAX_SIZE)) > 0) {
         file_counts->byte_count += n; 
+        for (int i = 0; i < n; i++) {
+            if (*(buf + i) == '\n') {
+                file_counts->newline_count += 1;
+            }
+        }
     } 
+    close(fd);
     return file_counts;
 }
 
@@ -69,6 +75,6 @@ int is_valid_file(char *file) {
 }
 
 void print_count(char *file, Counts *file_counts) {
-    fprintf(stdout, "%d\t%d\t%d\t%s", file_counts->newline_count, file_counts->word_count,
+    fprintf(stdout, "%d\t%d\t%d\t%s\n", file_counts->newline_count, file_counts->word_count,
         file_counts->byte_count, file);
 }
