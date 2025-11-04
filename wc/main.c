@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <sys/stat.h> /* Gives us the stat struct*/
 #include <fcntl.h>
+#include <stdlib.h> /* Gives us access to malloc */
+#include <unistd.h>
+
+#define MAX_SIZE    1024
 
 typedef struct {
     unsigned newline_count;
@@ -14,7 +18,7 @@ int is_valid_file(char *);
 
 int main(int argc, char *argv[]) {
     if (argc == 1) {
-        perror("There are not enough arguments\n");
+        perror("Error: There are not enough arguments\n");
         return 1;
     }  
     char *file = *(argv + 1);
@@ -31,6 +35,22 @@ int main(int argc, char *argv[]) {
 Counts *my_wc(char *file) {
     if (!is_valid_file(file)) return NULL;
     
+    int fd;
+    if ((fd = open(file, O_RDONLY, 0666)) == -1) {
+        fprintf(stderr, "Error: The file could not be opened %s\n", file);    
+        return 0;
+    }
+    
+    int n;
+    char buf[MAX_SIZE];
+    Counts *file_counts = (Counts *)malloc(sizeof(Counts));
+    file_counts->newline_count = 0;
+    file_counts->word_count = 0;
+    file_counts->byte_count = 0;
+    while ((n = read(fd, &buf, MAX_SIZE)) > 0) {
+        file_counts->byte_count += n; 
+    } 
+    return file_counts;
 }
 
 int is_valid_file(char *file) {
