@@ -1,10 +1,13 @@
 #include <stdio.h>
+#include <ctype.h>
 #include <sys/stat.h> /* Gives us the stat struct*/
 #include <fcntl.h>
 #include <stdlib.h> /* Gives us access to malloc */
 #include <unistd.h>
 
 #define MAX_SIZE    1024
+#define IN          1
+#define OUT         2
 
 typedef struct {
     unsigned newline_count;
@@ -21,12 +24,12 @@ int main(int argc, char *argv[]) {
         perror("Error: There are not enough arguments\n");
         return 1;
     }  
-    char *file = *(argv + 1);
-    for (int i = 1; i < argc; file++, i++) {
+    char **file_ptr = argv + 1;
+    for (int i = 1; i < argc; file_ptr++, i++) {
         Counts *current_counts;
-        if ((current_counts = my_wc(file)) == NULL) continue;
+        if ((current_counts = my_wc(*file_ptr)) == NULL) continue;
         
-        print_count(file, current_counts);
+        print_count(*file_ptr, current_counts);
     }
     
     return 0;
@@ -43,13 +46,28 @@ Counts *my_wc(char *file) {
     
     int n;
     char buf[MAX_SIZE];
+
+    /* Initialize Counts object */
     Counts *file_counts = (Counts *)malloc(sizeof(Counts));
     file_counts->newline_count = 0;
     file_counts->word_count = 0;
     file_counts->byte_count = 0;
+
+    int state = OUT;
     while ((n = read(fd, &buf, MAX_SIZE)) > 0) {
         file_counts->byte_count += n; 
         for (int i = 0; i < n; i++) {
+            
+            /* State machine to count words */
+            if (isspace(*(buf + i))) {
+                state = OUT;
+            } else if (!isspace(*(buf + i)) && state == OUT) {
+                file_counts->word_count += 1;
+                state = IN;
+            } else if (!isspace(*(buf + i)) && state == IN)
+                ;
+            
+            /* Count new line characters */
             if (*(buf + i) == '\n') {
                 file_counts->newline_count += 1;
             }
@@ -75,6 +93,6 @@ int is_valid_file(char *file) {
 }
 
 void print_count(char *file, Counts *file_counts) {
-    fprintf(stdout, "%d\t%d\t%d\t%s\n", file_counts->newline_count, file_counts->word_count,
+    fprintf(stdout, "  %d %d %d %s\n", file_counts->newline_count, file_counts->word_count,
         file_counts->byte_count, file);
 }
