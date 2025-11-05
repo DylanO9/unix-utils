@@ -8,7 +8,7 @@
 #define MAX_CHARS   1024
 #define MAX_MATCHED 1024
 
-int my_getline(char **, unsigned size);
+int my_getline(char *, unsigned, FILE *);
 int is_valid_file(char *);
 int my_grep(char *, char *);
 
@@ -24,7 +24,7 @@ int main (int argc, char *argv[]) {
         return 1;
     } 
 
-    *matched_lines = NULL;
+    memset(matched_lines, 0, sizeof(matched_lines));
     
     for (int i = 2; i < argc; i++) {
         my_grep(*(argv + i), *(argv + 1)); 
@@ -52,20 +52,20 @@ int my_grep(char *file, char *pattern) {
     }
     
     int fd;
-    if ((fd = open(file, O_RDONLY, 0)) > 0) {
+    if ((fd = open(file, O_RDONLY, 0)) >= 0) {
         int len;
         FILE *file_stream = fdopen(fd, "r");
         if (file_stream == NULL) {
             fprintf(stderr, "Error: Could not associate file descriptor with FILE * %s\n", file);    
             close(fd);
         }
-        while ((len = getline(&buf, &size, file_stream)) > 0) {
+        while ((len = my_getline(buf, size, file_stream)) > 0) {
             if (len > size) size = len;
-
-            for (int i = 0; i < len; i++) {
-                if (*(buf + i) == *(pattern)) {
+            char *buf_ptr = buf;
+            while (*(buf_ptr++) != '\0') {
+                if (*(buf_ptr) == *(pattern)) {
                     char *curr_pattern = pattern;
-                    char *curr_line = buf + i;
+                    char *curr_line = buf_ptr;
 
                     while (*++curr_line != '\0' && *++curr_pattern != '\0' && *curr_line == *curr_pattern)
                         ;
@@ -75,6 +75,7 @@ int my_grep(char *file, char *pattern) {
                         strcpy(*matched_it, buf); 
                         matched_it++;
                         *matched_it = NULL;
+                        break;
                     }
                 }    
             }
@@ -87,25 +88,24 @@ int my_grep(char *file, char *pattern) {
         return 0;
     }    
 
+    free(buf);
     close(fd);
     return 1;
 }
 
-int my_getline(char **buf, unsigned size) {
-    // getchar until we see an EOF or a newline character
-    // Place these characters into the bfufer
-    // Finish the line with a null string
+int my_getline(char *buf, unsigned size, FILE *file_stream) {
+    unsigned pos = 0;
     int c;
-    if ((c = getchar()) != EOF && size-- > 0) {
-        // Good read... store in the buf
-        *buf++ = c; 
+    while ((c = fgetc(file_stream)) != EOF && pos < size - 1) {
+        buf[pos++] = c;
+        if (c == '\n') break;
     }
-    
-    if (size < 0) {
-        // There was not enough space
-        return 0;
+
+    if (pos == 0 && c == EOF) {
+        return -1;
     }
-    return 1;
+    buf[pos] = '\0';
+    return pos;
 }
 
 int is_valid_file(char *file) {
