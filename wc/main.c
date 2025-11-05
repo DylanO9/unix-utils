@@ -25,12 +25,16 @@ int main(int argc, char *argv[]) {
         return 1;
     }  
     char **file_ptr = argv + 1;
+    Counts final_counts = {0, 0, 0};
     for (int i = 1; i < argc; file_ptr++, i++) {
         Counts *current_counts;
         if ((current_counts = my_wc(*file_ptr)) == NULL) continue;
-        
         print_count(*file_ptr, current_counts);
+        final_counts.newline_count += current_counts->newline_count;
+        final_counts.word_count += current_counts->word_count;
+        final_counts.byte_count += current_counts->byte_count; 
     }
+    print_count("total", &final_counts);
     
     return 0;
 } 
